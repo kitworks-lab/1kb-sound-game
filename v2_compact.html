@@ -1,0 +1,45 @@
+<body bgcolor=#eed align=center><p><canvas id=c style="width:600px;border:5px solid #222;box-shadow:8px 8px 0 #222;image-rendering:pixelated"></canvas><script>
+const x=c.getContext('2d');
+let A=0,h=0,e=0,d=0,p=140,s=0,f=0,m=1;
+const beep=(q,t=0.1)=>{
+  A=A||new AudioContext();
+  const o=A.createOscillator();
+  o.type='square';
+  o.frequency.value=q;
+  o.connect(A.destination);
+  o.start();
+  o.stop(A.currentTime+t);
+};
+const reset=()=>{if(e)beep(523);p=140;s=0;f=0;e=[];m=1};
+const rect=(C,X,Y,W,H)=>{x.fillStyle='#'+C;x.fillRect(X,Y,W,H)};
+const text=(C,S,X,Y)=>{x.fillStyle='#'+C;x.fillText(S,X,Y)};
+reset();
+onkeydown=v=>{const w=v.which-38;if(w*w===1)d=4*w;if(!m)reset()};
+onkeyup=()=>{d=0};
+c.onmousemove=v=>{if(m)p=v.offsetX/2-10};
+onclick=()=>{if(!m)reset()};
+setInterval(()=>{
+  rect('ffe',0,0,300,150);
+  if(m){
+    p=Math.max(0,Math.min(280,p+d));
+    if(++f%16===0)e.push([Math.random()*288,20,2+Math.random()+s/99,Math.random()<0.3]);
+  }
+  e=e.filter(o=>{
+    const [X,,V,G]=o,y=o[1]+=m*V;
+    rect(G?'294':'d32',X,y,9,9);
+    if(y>150){if(!G)s++;return 0}
+    if(m&&y>126&&X>p-9&&X<p+20){
+      if(G){s+=10;beep(880);return 0}
+      m=0;beep(120,0.3);return 1;
+    }
+    return 1;
+  });
+  h=Math.max(h,s);
+  rect('222',p,136,20,14);rect('269',p+3,139,14,5);
+  rect('222',0,0,300,20);text('ffe','SCORE '+s+' HI '+h,8,14);
+  if(!m){
+    rect('222',80,52,140,42);rect('ffe',83,55,134,36);
+    text('d32','GAME OVER',120,71);text('222','CLICK/SPACE',116,85);
+  }
+},16);
+</script>

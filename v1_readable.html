@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>1KB Dodge - Meteor &amp; Coin Arcade</title>
+  <style>
+    body {
+      margin: 0;
+      text-align: center;
+      background: #EEEEDD;
+    }
+    canvas {
+      width: 600px;
+      margin-top: 24px;
+      border: 5px solid #222222;
+      box-shadow: 8px 8px 0 #222222;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="300" height="150"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let audioCtx = null;
+    let playerX = 140;
+    let moveDir = 0;
+    let score = 0;
+    let highScore = 0;
+    let frame = 0;
+    let playing = 1;
+    let items = null;
+
+    function playBeep(freq, duration = 0.1) {
+      if (!audioCtx) audioCtx = new AudioContext();
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      osc.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function resetGame() {
+      if (items) playBeep(523, 0.1);
+      playerX = 140;
+      score = 0;
+      frame = 0;
+      items = [];
+      playing = 1;
+    }
+
+    function draw(hex, x, y, w, h) {
+      ctx.fillStyle = '#' + hex;
+      if (h) ctx.fillRect(x, y, w, h);
+      else ctx.fillText(x, y, w);
+    }
+
+    resetGame();
+
+    window.addEventListener('keydown', (ev) => {
+      const delta = ev.which - 38;
+      if (delta * delta === 1) moveDir = 4 * delta;
+      if (!playing) resetGame();
+    });
+
+    window.addEventListener('keyup', () => {
+      moveDir = 0;
+    });
+
+    canvas.addEventListener('mousemove', (ev) => {
+      if (playing) playerX = ev.offsetX / 2 - 10;
+    });
+
+    window.addEventListener('click', () => {
+      if (!playing) resetGame();
+    });
+
+    setInterval(() => {
+      draw('ffe', 0, 0, 300, 150);
+
+      if (playing) {
+        playerX += moveDir;
+        if (playerX < 0) playerX = 0;
+        if (playerX > 280) playerX = 280;
+
+        if (++frame % 16 === 0) {
+          items.push([
+            Math.random() * 288,
+            20,
+            2 + Math.random() + score / 99,
+            Math.random() < 0.3,
+          ]);
+        }
+      }
+
+      items = items.filter((item) => {
+        const [ix, , speed, isCoin] = item;
+        const iy = (item[1] += playing * speed);
+        draw(isCoin ? '294' : 'd32', ix, iy, 9, 9);
+
+        if (iy > 150) {
+          if (!isCoin) score++;
+          return false;
+        }
+        if (playing && iy > 126 && ix > playerX - 9 && ix < playerX + 20) {
+          if (isCoin) {
+            score += 10;
+            playBeep(880, 0.1);
+            return false;
+          }
+          playing = 0;
+          playBeep(120, 0.3);
+          return true;
+        }
+        return true;
+      });
+
+      if (score > highScore) highScore = score;
+
+      draw('222', playerX, 136, 20, 14);
+      draw('269', playerX + 3, 139, 14, 5);
+
+      draw('222', 0, 0, 300, 20);
+      draw('ffe', 'SCORE ' + score + ' HI ' + highScore, 8, 14);
+
+      if (!playing) {
+        draw('222', 80, 52, 140, 42);
+        draw('ffe', 83, 55, 134, 36);
+        draw('d32', 'GAME OVER', 120, 71);
+        draw('222', 'CLICK/SPACE', 116, 85);
+      }
+    }, 16);
+  </script>
+</body>
+</html>
